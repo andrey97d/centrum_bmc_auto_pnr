@@ -236,11 +236,13 @@ def main():
             ping = True
         except OSError:
             ping = False
-        try:
-            get(ip, user, pwd, "/redfish/v1/") if ping else (_ for _ in ()).throw(Exception())
-            auth = True
-        except Exception:
-            auth = False
+        auth = False
+        if ping:
+            try:
+                get(ip, user, pwd, "/redfish/v1/")
+                auth = True
+            except Exception:
+                pass
         print(f"  {ip:<18}  ping:{G('OK') if ping else R('NO')}  auth:{G('OK') if auth else R('NO')}")
         if ping and auth:
             reachable.append(ip)
@@ -291,12 +293,15 @@ def main():
 
     # Итог
     print(B("\n  ИТОГ"))
-    cols = ["versions_ok", "pcie_ok", "storage_ok", "health_ok", "memory_ok"]
     print(f"  {'IP':<18}  Версии   PCIe     Storage  Health   Память")
     print("  " + "─" * 65)
     for r in results:
-        row = "  ".join(G(f"{'OK':<7}") if r.get(k) else R(f"{'DIFF':<7}") for k in cols)
-        print(f"  {r['ip']:<18}  {row}")
+        v = G("OK     ") if r.get("versions_ok") else R("DIFF   ")
+        p = G("OK     ") if r.get("pcie_ok")     else R("DIFF   ")
+        s = G("OK     ") if r.get("storage_ok")  else R("DIFF   ")
+        h = G("OK     ") if r.get("health_ok")   else R("DIFF   ")
+        m = G("OK     ") if r.get("memory_ok")   else R("DIFF   ")
+        print(f"  {r['ip']:<18}  {v}  {p}  {s}  {h}  {m}")
 
     # CSV
     print()
